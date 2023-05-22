@@ -1,9 +1,10 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi import Form
 import os
 import requests
 import json
 import uvicorn
-from fastapi import FastAPI
 from pydantic import BaseModel
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -60,12 +61,14 @@ app = FastAPI(
 def home():
     return ("Home page")
 
-
+@app.get("/")
+def read_root():
+    return FileResponse('index.html')
 
 
 @app.post("/predict")
-async def predict(item: Item):
-    inputs = tokenize(item.text)[0].to(device)
+async def predict(text: str = Form(...)):
+    inputs = tokenize(text)[0].to(device)
     
     outputs = model.forward(inputs)[0]
     _, prediction = torch.max(outputs.data, 1)
@@ -74,8 +77,8 @@ async def predict(item: Item):
     # Create a DataFrame for this interaction
     df = pd.DataFrame({
         'time': [datetime.now()],
-        'input': [item.text],
-        'prediction': [prediction.item()]
+        'input': [text],
+        'prediction': [used_labels.get(list(used_labels.keys())[prediction.item()])]
     })
 
     # Append DataFrame to CSV file
@@ -86,15 +89,12 @@ async def predict(item: Item):
     else:
         df.to_csv('interaction_log.csv', mode='a', header=False, index=False)
 
-
-    logging.info('Input: %s, Prediction: %s', item.text, prediction)
-    return used_labels.get(list(used_labels.keys())[prediction])
+    logging.info('Input: %s, Prediction: %s', text, used_labels.get(list(used_labels.keys())[prediction.item()]))
+    return {"prediction": used_labels.get(list(used_labels.keys())[prediction.item()])}
 
 
 if __name__ == "__main__":
     uvicorn.run(app,host='0.0.0.0', port=5000)
-
-
 
 
 
