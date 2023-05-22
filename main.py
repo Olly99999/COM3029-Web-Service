@@ -90,7 +90,8 @@ async def predict(text: str = Form(...)):
         df.to_csv('interaction_log.csv', mode='a', header=False, index=False)
 
     logging.info('Input: %s, Prediction: %s', text, used_labels.get(list(used_labels.keys())[prediction.item()]))
-    return {"prediction": used_labels.get(list(used_labels.keys())[prediction.item()])}
+    #return {"The predicted emotion is": used_labels.get(list(used_labels.keys())[prediction.item()])}
+    return f"The predicted emotion is {used_labels.get(list(used_labels.keys())[prediction.item()])}"
 
 
 if __name__ == "__main__":
