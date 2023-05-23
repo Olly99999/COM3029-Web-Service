@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi import Form
 import os
+import csv
 import requests
 import json
 import uvicorn
@@ -43,6 +44,7 @@ def tokenize(text, max_length = 50, cls_token = True, sep_token = True):
 
   return torch.tensor(input_ids).unsqueeze(0), input_mask
 
+
 class Item(BaseModel):
     text: str
 
@@ -76,18 +78,19 @@ async def predict(text: str = Form(...)):
 
     # Create a DataFrame for this interaction
     df = pd.DataFrame({
-        'time': [datetime.now()],
-        'input': [text],
-        'prediction': [used_labels.get(list(used_labels.keys())[prediction.item()])]
-    })
-
-    # Append DataFrame to CSV file
-    df.to_csv('interaction_log.csv', mode='a', header=False, index=False)
-
+        'Date and Time': [datetime.now()],
+        'Input': [text],
+        'Emotion Predicted': [used_labels.get(list(used_labels.keys())[prediction.item()])]
+    }, columns=['Date and Time', 'Input', 'Emotion Predicted'])
+    
+   
     if not os.path.isfile('interaction_log.csv'):
-        df.to_csv('interaction_log.csv', mode='w', header=True, index=False)
-    else:
+        #print(df)
+        df.to_csv('interaction_log.csv', header = True, index=False)
+    else: # else it exists so append without writing the header
+       # print(df)
         df.to_csv('interaction_log.csv', mode='a', header=False, index=False)
+
 
     logging.info('Input: %s, Prediction: %s', text, used_labels.get(list(used_labels.keys())[prediction.item()]))
     #return {"The predicted emotion is": used_labels.get(list(used_labels.keys())[prediction.item()])}
